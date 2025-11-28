@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../services/supabase';
+import { localDB } from '../services/localStorage';
 import type { SensorySettings } from '../types';
 
 interface AddChildModalProps {
@@ -12,7 +12,7 @@ const AddChildModal: React.FC<AddChildModalProps> = ({ onClose, onSuccess }) => 
   const { user } = useAuth();
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [_photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [sensorySettings, setSensorySettings] = useState<SensorySettings>({
     soundTolerance: 5,
@@ -43,37 +43,17 @@ const AddChildModal: React.FC<AddChildModalProps> = ({ onClose, onSuccess }) => 
     setError('');
 
     try {
-      let photoUrl = '';
+      // Use photoPreview (base64) or placeholder
+      const photoUrl = photoPreview || 'https://via.placeholder.com/150?text=Child';
 
-      // Upload photo to Supabase Storage
-      if (photo) {
-        const fileExt = photo.name.split('.').pop();
-        const fileName = `${user.userId}/${Date.now()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('children_photos')
-          .upload(fileName, photo);
-
-        if (uploadError) throw uploadError;
-
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('children_photos')
-          .getPublicUrl(fileName);
-
-        photoUrl = publicUrl;
-      }
-
-      // Create child profile
-      const { error: insertError } = await supabase.from('children').insert({
-        parent_id: user.userId,
+      // Create child profile in localStorage
+      localDB.addChild({
+        parentId: user.userId,
         name,
         age: parseInt(age),
-        photo_url: photoUrl || 'https://via.placeholder.com/150',
-        sensory_settings: sensorySettings,
+        photoUrl,
+        sensorySettings,
       });
-
-      if (insertError) throw insertError;
 
       onSuccess();
     } catch (err: any) {

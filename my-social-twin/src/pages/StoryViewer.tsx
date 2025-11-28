@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Story, ChoiceMade } from '../types';
-import { supabase } from '../services/supabase';
+import { localDB } from '../services/localStorage';
 import SensoryControls from '../components/SensoryControls';
 
 const StoryViewer: React.FC = () => {
@@ -14,7 +14,6 @@ const StoryViewer: React.FC = () => {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [isCorrect, setIsCorrect] = useState(false);
-  const [startTime] = useState(Date.now());
   const [volume, setVolume] = useState(50);
   const [brightness, setBrightness] = useState(100);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -25,35 +24,16 @@ const StoryViewer: React.FC = () => {
     }
   }, [storyId]);
 
-  const fetchStory = async () => {
+  const fetchStory = () => {
     try {
-      const { data, error } = await supabase
-        .from('stories')
-        .select('*')
-        .eq('story_id', storyId)
-        .single();
-
-      if (error) throw error;
-
-      setStory({
-        storyId: data.story_id,
-        childId: data.child_id,
-        templateId: data.template_id,
-        title: data.title,
-        description: data.description,
-        frames: data.frames,
-        createdBy: data.created_by,
-        createdAt: data.created_at,
-        lastViewedAt: data.last_viewed_at,
-        isFavorite: data.is_favorite,
-        completionCount: data.completion_count,
-      });
-
-      // Update last viewed
-      await supabase
-        .from('stories')
-        .update({ last_viewed_at: new Date().toISOString() })
-        .eq('story_id', storyId);
+      const data = localDB.getStory(storyId!);
+      if (data) {
+        setStory(data);
+        // Update last viewed
+        localDB.updateStory(storyId!, {
+          lastViewedAt: new Date().toISOString()
+        });
+      }
     } catch (error) {
       console.error('Error fetching story:', error);
     }
@@ -97,32 +77,15 @@ const StoryViewer: React.FC = () => {
   const handleComplete = async () => {
     if (!story) return;
 
-    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-    const completionRate = story.frames.filter((frame) => frame.choices).length > 0
-      ? (choicesMade.filter((c) => c.correct).length /
-          story.frames.filter((f) => f.choices).length) *
-        100
-      : 100;
-
     try {
-      // Save progress
-      await supabase.from('progress').insert({
-        child_id: story.childId,
-        story_id: story.storyId,
-        choices_made: choicesMade,
-        time_spent: timeSpent,
-        completion_rate: completionRate,
-      });
-
       // Increment completion count
-      await supabase
-        .from('stories')
-        .update({ completion_count: story.completionCount + 1 })
-        .eq('story_id', storyId);
+      localDB.updateStory(story.storyId, {
+        completionCount: story.completionCount + 1
+      });
 
       // Show completion screen
       alert('🎉 Great job! Story completed!');
-      navigate(`/child/${story.childId}`);
+      navigate('/child/' + story.childId);
     } catch (error) {
       console.error('Error saving progress:', error);
     }

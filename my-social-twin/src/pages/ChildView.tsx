@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Child, Character, Story } from '../types';
-import { supabase } from '../services/supabase';
+import { localDB } from '../services/localStorage';
 
 const ChildView: React.FC = () => {
   const { childId } = useParams<{ childId: string }>();
@@ -18,71 +18,16 @@ const ChildView: React.FC = () => {
     }
   }, [childId]);
 
-  const fetchChildData = async () => {
+  const fetchChildData = () => {
     try {
-      // Fetch child profile
-      const { data: childData, error: childError } = await supabase
-        .from('children')
-        .select('*')
-        .eq('child_id', childId)
-        .single();
+      const childData = localDB.getChild(childId!);
+      setChild(childData);
 
-      if (childError) throw childError;
+      const charactersData = localDB.getCharacters(childId!);
+      setCharacters(charactersData);
 
-      setChild({
-        childId: childData.child_id,
-        parentId: childData.parent_id,
-        name: childData.name,
-        age: childData.age,
-        photoUrl: childData.photo_url,
-        sensorySettings: childData.sensory_settings,
-        createdAt: childData.created_at,
-        updatedAt: childData.updated_at,
-      });
-
-      // Fetch characters
-      const { data: charactersData, error: charactersError } = await supabase
-        .from('characters')
-        .select('*')
-        .eq('child_id', childId);
-
-      if (charactersError) throw charactersError;
-
-      setCharacters(
-        charactersData.map((c) => ({
-          characterId: c.character_id,
-          childId: c.child_id,
-          name: c.name,
-          relationship: c.relationship,
-          photoUrl: c.photo_url,
-          createdAt: c.created_at,
-        }))
-      );
-
-      // Fetch stories
-      const { data: storiesData, error: storiesError } = await supabase
-        .from('stories')
-        .select('*')
-        .eq('child_id', childId)
-        .order('created_at', { ascending: false });
-
-      if (storiesError) throw storiesError;
-
-      setStories(
-        storiesData.map((s) => ({
-          storyId: s.story_id,
-          childId: s.child_id,
-          templateId: s.template_id,
-          title: s.title,
-          description: s.description,
-          frames: s.frames,
-          createdBy: s.created_by,
-          createdAt: s.created_at,
-          lastViewedAt: s.last_viewed_at,
-          isFavorite: s.is_favorite,
-          completionCount: s.completion_count,
-        }))
-      );
+      const storiesData = localDB.getStories(childId!);
+      setStories(storiesData);
     } catch (error) {
       console.error('Error fetching child data:', error);
     } finally {
@@ -202,36 +147,13 @@ const ChildView: React.FC = () => {
           </div>
         ) : (
           <div>
-            {characters.length === 0 ? (
-              <div className="text-center py-16 card">
-                <div className="text-6xl mb-4">👥</div>
-                <h3 className="text-2xl font-semibold text-gray-700 mb-2">No Characters Added</h3>
-                <p className="text-gray-600 mb-6">
-                  Add family members, friends, and teachers to personalize stories
-                </p>
-                <button className="btn-primary">Add First Character</button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {characters.map((character) => (
-                  <div key={character.characterId} className="card">
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-200">
-                        <img
-                          src={character.photoUrl}
-                          alt={character.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900">{character.name}</h3>
-                        <p className="text-gray-600 capitalize">{character.relationship}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="text-center py-16 card">
+              <div className="text-6xl mb-4">👥</div>
+              <h3 className="text-2xl font-semibold text-gray-700 mb-2">Characters Coming Soon</h3>
+              <p className="text-gray-600 mb-6">
+                Character management will be available in the full version
+              </p>
+            </div>
           </div>
         )}
       </div>

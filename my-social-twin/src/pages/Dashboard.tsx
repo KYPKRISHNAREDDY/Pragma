@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import type { Child } from '../types';
-import { supabase } from '../services/supabase';
+import { localDB } from '../services/localStorage';
 import ChildCard from '../components/ChildCard';
 import AddChildModal from '../components/AddChildModal';
 
@@ -19,28 +19,10 @@ const Dashboard: React.FC = () => {
     }
   }, [user]);
 
-  const fetchChildren = async () => {
+  const fetchChildren = () => {
     try {
-      const { data, error } = await supabase
-        .from('children')
-        .select('*')
-        .eq('parent_id', user?.userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedChildren: Child[] = data.map((child) => ({
-        childId: child.child_id,
-        parentId: child.parent_id,
-        name: child.name,
-        age: child.age,
-        photoUrl: child.photo_url,
-        sensorySettings: child.sensory_settings,
-        createdAt: child.created_at,
-        updatedAt: child.updated_at,
-      }));
-
-      setChildren(formattedChildren);
+      const data = localDB.getChildren(user!.userId);
+      setChildren(data);
     } catch (error) {
       console.error('Error fetching children:', error);
     } finally {
