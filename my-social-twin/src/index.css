@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for My Social Twin */
+@layer base {
+  body {
+    @apply bg-white text-gray-900;
+  }
+}
+
+@layer components {
+  /* High contrast, accessible buttons */
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-4 rounded-lg text-lg font-semibold
+           min-h-[60px] min-w-[60px] hover:bg-indigo-700
+           focus:outline-none focus:ring-4 focus:ring-indigo-300
+           transition-all duration-200 shadow-lg;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white px-6 py-4 rounded-lg text-lg font-semibold
+           min-h-[60px] min-w-[60px] hover:bg-green-600
+           focus:outline-none focus:ring-4 focus:ring-green-300
+           transition-all duration-200 shadow-lg;
+  }
+
+  .btn-outline {
+    @apply border-2 border-gray-300 text-gray-700 px-6 py-4 rounded-lg text-lg font-semibold
+           min-h-[60px] min-w-[60px] hover:bg-gray-100
+           focus:outline-none focus:ring-4 focus:ring-gray-300
+           transition-all duration-200;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white rounded-xl shadow-lg p-6 border-2 border-gray-200;
+  }
+
+  /* Input styles - large, high contrast */
+  .input-field {
+    @apply w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-lg
+           focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-500
+           transition-all duration-200;
+  }
+
+  /* Story frame styles */
+  .story-frame {
+    @apply bg-white rounded-xl shadow-xl p-6 border-4 border-indigo-200
+           min-h-[400px] flex flex-col items-center justify-center;
+  }
+}
+
+/* Accessibility enhancements */
+@layer utilities {
+  .touch-target {
+    min-height: 60px;
+    min-width: 60px;
+  }
+
+  .high-contrast {
+    @apply border-4 border-black;
+  }
+
+  /* Reduce motion for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
