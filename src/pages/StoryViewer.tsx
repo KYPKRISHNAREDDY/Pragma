@@ -72,11 +72,30 @@ const StoryViewer: React.FC = () => {
             if (slot.role === 'child') {
               photoUrl = child.photoUrl;
             } else {
-              // Find matching character by role/relationship
-              const char = chars.find(c =>
-                c.relationship.toLowerCase() === slot.role.toLowerCase() ||
-                c.relationship.toLowerCase().includes(slot.role.toLowerCase())
-              );
+              // Find matching character by role/relationship with flexible matching
+              const char = chars.find(c => {
+                const relationship = c.relationship.toLowerCase();
+                const role = slot.role.toLowerCase();
+
+                // Direct match
+                if (relationship === role) return true;
+
+                // Partial match (e.g., "mother" matches "parent", "barber" matches "guide")
+                if (relationship.includes(role)) return true;
+
+                // Reverse match
+                if (role.includes(relationship)) return true;
+
+                // Special cases
+                if (role === 'parent' && (relationship.includes('mom') || relationship.includes('dad') ||
+                    relationship.includes('mother') || relationship.includes('father'))) return true;
+
+                if (role === 'guide' && (relationship.includes('barber') || relationship.includes('doctor') ||
+                    relationship.includes('dentist') || relationship.includes('professional'))) return true;
+
+                return false;
+              });
+
               photoUrl = char?.photoUrl || '';
             }
 
@@ -96,6 +115,7 @@ const StoryViewer: React.FC = () => {
           }
         } catch (error) {
           console.error(`Error composing frame ${i}:`, error);
+          // Continue to next frame even if one fails
         }
       }
     }

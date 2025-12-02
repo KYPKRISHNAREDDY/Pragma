@@ -11,6 +11,10 @@ const ChildView: React.FC = () => {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'stories' | 'characters'>('stories');
+  const [showAddCharacter, setShowAddCharacter] = useState(false);
+  const [newCharacterName, setNewCharacterName] = useState('');
+  const [newCharacterRelationship, setNewCharacterRelationship] = useState('');
+  const [newCharacterPhoto, setNewCharacterPhoto] = useState('');
 
   useEffect(() => {
     if (childId) {
@@ -32,6 +36,45 @@ const ChildView: React.FC = () => {
       console.error('Error fetching child data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddCharacter = () => {
+    if (!newCharacterName || !newCharacterRelationship) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    try {
+      localDB.addCharacter({
+        childId: childId!,
+        name: newCharacterName,
+        relationship: newCharacterRelationship,
+        photoUrl: newCharacterPhoto || 'https://via.placeholder.com/150?text=' + newCharacterName[0],
+      });
+
+      // Reset form
+      setNewCharacterName('');
+      setNewCharacterRelationship('');
+      setNewCharacterPhoto('');
+      setShowAddCharacter(false);
+
+      // Refresh data
+      fetchChildData();
+    } catch (error) {
+      console.error('Error adding character:', error);
+      alert('Failed to add character');
+    }
+  };
+
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewCharacterPhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -147,13 +190,112 @@ const ChildView: React.FC = () => {
           </div>
         ) : (
           <div>
-            <div className="text-center py-16 card">
-              <div className="text-6xl mb-4">👥</div>
-              <h3 className="text-2xl font-semibold text-gray-700 mb-2">Characters Coming Soon</h3>
-              <p className="text-gray-600 mb-6">
-                Character management will be available in the full version
+            <div className="mb-6 flex justify-between items-center">
+              <p className="text-gray-600">
+                Add family members, friends, and professionals (like barbers or doctors) to personalize stories!
               </p>
+              <button
+                onClick={() => setShowAddCharacter(true)}
+                className="btn-primary"
+              >
+                ➕ Add Character
+              </button>
             </div>
+
+            {showAddCharacter && (
+              <div className="card mb-6 bg-blue-50 border-2 border-blue-300">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Add New Character</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Name</label>
+                    <input
+                      type="text"
+                      value={newCharacterName}
+                      onChange={(e) => setNewCharacterName(e.target.value)}
+                      className="input-field"
+                      placeholder="e.g., Sarah, Mr. Tom"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Relationship
+                      <span className="text-xs text-gray-500 ml-2">
+                        (e.g., Mother, Father, Parent, Friend, Teacher, Barber, Doctor, Guide)
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newCharacterRelationship}
+                      onChange={(e) => setNewCharacterRelationship(e.target.value)}
+                      className="input-field"
+                      placeholder="e.g., Mother, Barber, Friend"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Photo (Optional)</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="input-field"
+                    />
+                    {newCharacterPhoto && (
+                      <img
+                        src={newCharacterPhoto}
+                        alt="Preview"
+                        className="mt-2 w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+                      />
+                    )}
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={handleAddCharacter} className="btn-primary">
+                      ✅ Add Character
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAddCharacter(false);
+                        setNewCharacterName('');
+                        setNewCharacterRelationship('');
+                        setNewCharacterPhoto('');
+                      }}
+                      className="btn-outline"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {characters.length === 0 ? (
+              <div className="text-center py-16 card">
+                <div className="text-6xl mb-4">👥</div>
+                <h3 className="text-2xl font-semibold text-gray-700 mb-2">No Characters Yet</h3>
+                <p className="text-gray-600 mb-6">
+                  Add family members and helpers to make stories more personal!
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {characters.map((character) => (
+                  <div key={character.characterId} className="card">
+                    <div className="flex items-center gap-4">
+                      <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-300">
+                        <img
+                          src={character.photoUrl}
+                          alt={character.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">{character.name}</h3>
+                        <p className="text-gray-600 capitalize">{character.relationship}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
