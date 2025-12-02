@@ -107,7 +107,7 @@ const ChildView: React.FC = () => {
               ← Back to Dashboard
             </button>
             <button
-              onClick={() => navigate(`/child/${childId}/create-story`)}
+              onClick={() => navigate(`/child/${childId}/story/create`)}
               className="btn-primary"
             >
               ➕ Create New Story
@@ -163,7 +163,7 @@ const ChildView: React.FC = () => {
                 <h3 className="text-2xl font-semibold text-gray-700 mb-2">No Stories Yet</h3>
                 <p className="text-gray-600 mb-6">Create the first social story for {child.name}</p>
                 <button
-                  onClick={() => navigate(`/child/${childId}/create-story`)}
+                  onClick={() => navigate(`/child/${childId}/story/create`)}
                   className="btn-primary"
                 >
                   Create First Story

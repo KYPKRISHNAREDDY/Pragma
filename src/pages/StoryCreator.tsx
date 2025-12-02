@@ -138,10 +138,27 @@ const StoryCreator: React.FC = () => {
                       {template.difficulty}
                     </span>
                   </div>
-                  <p className="text-gray-600 mb-2">{template.description}</p>
-                  <p className="text-sm text-gray-500">
-                    Category: <span className="capitalize">{template.category}</span>
-                  </p>
+                  <p className="text-gray-600 mb-3">{template.description}</p>
+                  <div className="text-sm text-gray-500 mb-2">
+                    Category: <span className="capitalize font-semibold">{template.category}</span>
+                  </div>
+
+                  {/* REQUIRED PHOTOS - BIG & CLEAR */}
+                  {template.requiredCharacters && template.requiredCharacters.length > 0 && (
+                    <div className="mt-3 pt-3 border-t-2 border-gray-200">
+                      <p className="text-sm font-bold text-indigo-700 mb-2">📸 Photos Needed:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {template.requiredCharacters.map((req, idx) => (
+                          <span
+                            key={idx}
+                            className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-semibold"
+                          >
+                            {req.role === 'child' ? '👶' : req.role === 'parent' ? '👨‍👩' : req.role === 'teacher' ? '👩‍🏫' : req.role === 'friend' ? '👦' : '👨‍⚕️'} {req.role.toUpperCase()}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
