@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import type { Story, ChoiceMade } from '../types';
+import type { Story, ChoiceMade, Child, Character } from '../types';
 import { localDB } from '../services/localStorage';
 import SensoryControls from '../components/SensoryControls';
+import { composeFrame, generateSceneBackground } from '../services/imageComposer';
 
 const StoryViewer: React.FC = () => {
   const { storyId } = useParams<{ storyId: string }>();
   const navigate = useNavigate();
 
   const [story, setStory] = useState<Story | null>(null);
+  const [composedImages, setComposedImages] = useState<Record<number, string>>({});
   const [currentFrame, setCurrentFrame] = useState(0);
   const [choicesMade, setChoicesMade] = useState<ChoiceMade[]>([]);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -24,19 +26,81 @@ const StoryViewer: React.FC = () => {
     }
   }, [storyId]);
 
-  const fetchStory = () => {
+  const fetchStory = async () => {
     try {
       const data = localDB.getStory(storyId!);
       if (data) {
         setStory(data);
+
+        // Fetch child and characters
+        const childData = localDB.getChild(data.childId);
+        const charactersData = localDB.getCharacters(data.childId);
+
         // Update last viewed
         localDB.updateStory(storyId!, {
           lastViewedAt: new Date().toISOString()
         });
+
+        // Compose images for all frames
+        if (childData) {
+          await composeAllFrames(data, childData, charactersData);
+        }
       }
     } catch (error) {
       console.error('Error fetching story:', error);
     }
+  };
+
+  const composeAllFrames = async (story: Story, child: Child, chars: Character[]) => {
+    const composed: Record<number, string> = {};
+
+    for (let i = 0; i < story.frames.length; i++) {
+      const frame = story.frames[i];
+
+      if (frame.characterSlots && frame.characterSlots.length > 0) {
+        try {
+          // Generate background if needed
+          const backgroundUrl = frame.backgroundUrl ||
+            (frame.backgroundScene ?
+              generateSceneBackground(frame.backgroundScene, 700, 500) :
+              undefined);
+
+          // Map slots to actual photos
+          const characterSlots = frame.characterSlots.map(slot => {
+            let photoUrl = '';
+
+            if (slot.role === 'child') {
+              photoUrl = child.photoUrl;
+            } else {
+              // Find matching character by role/relationship
+              const char = chars.find(c =>
+                c.relationship.toLowerCase() === slot.role.toLowerCase() ||
+                c.relationship.toLowerCase().includes(slot.role.toLowerCase())
+              );
+              photoUrl = char?.photoUrl || '';
+            }
+
+            return { slot, photoUrl };
+          }).filter(s => s.photoUrl); // Only include slots with photos
+
+          if (characterSlots.length > 0) {
+            const composedImage = await composeFrame({
+              backgroundUrl,
+              backgroundColor: frame.backgroundColor,
+              width: 700,
+              height: 500,
+              characterSlots,
+            });
+
+            composed[i] = composedImage;
+          }
+        } catch (error) {
+          console.error(`Error composing frame ${i}:`, error);
+        }
+      }
+    }
+
+    setComposedImages(composed);
   };
 
   const handleChoice = (choice: any) => {
@@ -137,6 +201,18 @@ const StoryViewer: React.FC = () => {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="max-w-4xl w-full">
           <div className="story-frame">
+            {/* Composed Scene Image */}
+            {composedImages[currentFrame] && (
+              <div className="mb-6 flex justify-center">
+                <img
+                  src={composedImages[currentFrame]}
+                  alt={`Story frame ${currentFrame + 1}`}
+                  className="rounded-xl shadow-2xl border-4 border-white max-w-full"
+                  style={{ maxHeight: '500px' }}
+                />
+              </div>
+            )}
+
             {/* Emotion Indicator */}
             <div className="flex justify-center gap-2 mb-6">
               {frame.emotions.map((emotion) => (

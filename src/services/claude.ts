@@ -81,6 +81,7 @@ Return ONLY the JSON array, no other text.`;
     const frames: StoryFrame[] = claudeResponse.map((frame, index) => ({
       frameNumber: index + 1,
       backgroundColor: getBackgroundColor(frame.emotion),
+      characterSlots: [], // Claude API doesn't provide slots, would need enhancement
       characters: characters.map((char, charIndex) => ({
         characterId: char.characterId,
         position: getCharacterPosition(charIndex, characters.length),

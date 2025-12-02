@@ -42,15 +42,27 @@ export interface Choice {
   feedback: string;
 }
 
+// Character slot defines WHERE to place a character photo in the frame
+export interface CharacterSlot {
+  role: 'child' | 'parent' | 'guide' | 'friend' | 'teacher' | 'sibling'; // Who goes here
+  position: { x: number; y: number }; // Position in pixels (or percentage)
+  size: { width: number; height: number }; // Size of the photo slot
+  zIndex?: number; // Layer order (higher = in front)
+  rotation?: number; // Rotation angle in degrees
+  description?: string; // e.g., "sitting on barber chair", "standing at door"
+}
+
 export interface StoryFrame {
   frameNumber: number;
-  backgroundUrl?: string;
-  backgroundColor?: string;
+  backgroundUrl?: string; // URL to background scene image
+  backgroundColor?: string; // Fallback solid color
+  backgroundScene?: string; // Scene type: 'classroom', 'barber_shop', 'bedroom', etc.
+  characterSlots: CharacterSlot[]; // Defined slots for where to place photos
   characters: Array<{
     characterId: string;
     position: { x: number; y: number };
     size?: { width: number; height: number };
-  }>;
+  }>; // Actual assigned characters (legacy, will be replaced by slots)
   text: string;
   emotions: Array<'happy' | 'calm' | 'worried' | 'scared' | 'excited' | 'sad' | 'surprised'>;
   soundUrl?: string;
