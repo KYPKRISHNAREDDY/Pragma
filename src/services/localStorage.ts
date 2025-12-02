@@ -235,6 +235,19 @@ class LocalStorageService {
           frameCount: 5,
           requiredCharacters: [],
         },
+        {
+          templateId: '7',
+          name: 'Visit to the Barber Shop',
+          category: 'routine',
+          description: 'Getting a haircut at the barber shop with parent and barber',
+          difficulty: 'medium',
+          frameCount: 6,
+          requiredCharacters: [
+            { role: 'child', description: 'The child getting the haircut' },
+            { role: 'parent', description: 'Parent accompanying the child' },
+            { role: 'guide', description: 'The friendly barber' },
+          ],
+        },
       ];
       this.setItem('templates', templates);
     }
